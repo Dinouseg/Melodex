@@ -1,0 +1,11 @@
+* text=auto
+
+# Shell scripts must keep LF or they will not run on Linux/macOS.
+*.sh text eol=lf
+*.py text eol=lf
+*.bat text eol=crlf
+
+# Never touch binary assets.
+*.ico binary
+*.png binary
+*.exe binary
