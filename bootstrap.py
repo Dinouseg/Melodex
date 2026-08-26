@@ -26,7 +26,22 @@ REQUIRED = {
 
 MIN_PYTHON = (3, 10)
 
-FFMPEG_WINDOWS_URL = "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip"
+# Mirrors are tried in order, smallest first. Several exist on purpose:
+# gyan.dev goes down (503) often enough to matter, and it serves a Let's
+# Encrypt certificate that Windows machines with a stale root store reject,
+# while GitHub uses a different CA entirely. Every one of these is fetched
+# with requests, which validates against its own bundled certifi store
+# instead of the Windows one, so an out-of-date system root list no longer
+# breaks the install.
+FFMPEG_MIRRORS = [
+    ("gyan.dev",
+     "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip"),
+    ("GitHub (BtbN)",
+     "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/"
+     "ffmpeg-master-latest-win64-gpl-shared.zip"),
+    ("GitHub (GyanD mirror)",
+     "https://github.com/GyanD/codexffmpeg/releases/latest"),  # resolved via API
+]
 
 
 def frozen() -> bool:
@@ -121,41 +136,84 @@ def manual_ffmpeg_hint() -> str:
     return "Install it with:  winget install Gyan.FFmpeg"
 
 
-def install_ffmpeg_windows(progress=None, log=print) -> str | None:
-    """Download a static ffmpeg build into our data dir. Returns the bin path."""
-    if sys.platform != "win32":
-        log("Automatic ffmpeg install is Windows only.\n" + manual_ffmpeg_hint())
-        return None
+def _no_window() -> dict:
+    """Keep console windows from flashing up in the packaged GUI build."""
+    if sys.platform == "win32":
+        return {"creationflags": 0x08000000}  # CREATE_NO_WINDOW
+    return {}
 
-    import tempfile
-    import urllib.request
 
-    target = ffmpeg_target_dir()
-    tmp_zip = os.path.join(tempfile.gettempdir(), "wavequen-ffmpeg.zip")
-
-    log("Downloading ffmpeg (about 40 MB)...")
+def verify_ffmpeg(bin_dir: str, log=print) -> bool:
+    """An installed ffmpeg is only real if it actually runs."""
+    exe = os.path.join(bin_dir, "ffmpeg.exe" if sys.platform == "win32" else "ffmpeg")
+    if not os.path.isfile(exe):
+        return False
     try:
-        request = urllib.request.Request(
-            FFMPEG_WINDOWS_URL, headers={"User-Agent": "WavequenDownloader"}
-        )
-        with urllib.request.urlopen(request, timeout=60) as response:
-            total = int(response.headers.get("Content-Length") or 0)
-            read = 0
-            with open(tmp_zip, "wb") as out:
-                while True:
-                    chunk = response.read(262144)
-                    if not chunk:
-                        break
-                    out.write(chunk)
-                    read += len(chunk)
-                    if progress and total:
-                        progress(read * 100 / total)
-    except Exception as exc:  # noqa: BLE001 - network, DNS, TLS, disk all possible
-        log(f"Download failed: {exc}\n{manual_ffmpeg_hint()}")
-        _quiet_remove(tmp_zip)
-        return None
+        proc = subprocess.run([exe, "-version"], capture_output=True, text=True,
+                              timeout=30, **_no_window())
+    except (OSError, subprocess.SubprocessError) as exc:
+        log(f"ffmpeg was installed but will not run: {exc}")
+        return False
+    if proc.returncode != 0:
+        log("ffmpeg was installed but exited with an error.")
+        return False
+    return True
 
-    log("Extracting...")
+
+def _resolve_github_latest(api_url: str, log=print) -> str | None:
+    """Turn a GitHub 'latest release' page into a concrete .zip asset URL."""
+    import requests
+    api = api_url.replace("https://github.com/", "https://api.github.com/repos/")
+    resp = requests.get(api, timeout=30)
+    resp.raise_for_status()
+    assets = resp.json().get("assets") or []
+    # Prefer the small essentials zip; Python's zipfile cannot read the .7z.
+    candidates = [a for a in assets
+                  if a["name"].endswith(".zip") and "essentials" in a["name"]]
+    if not candidates:
+        candidates = [a for a in assets if a["name"].endswith(".zip")]
+    if not candidates:
+        return None
+    best = min(candidates, key=lambda a: a.get("size") or 0)
+    return best.get("browser_download_url")
+
+
+def _download(url: str, dest: str, progress=None, log=print) -> bool:
+    """Stream a URL to disk using requests, which validates against certifi.
+
+    urllib is deliberately not used here: it trusts the Windows root store,
+    and a stale store rejects Let's Encrypt chains with
+    "certificate verify failed: certificate has expired".
+    """
+    import requests
+    with requests.get(url, stream=True, timeout=60,
+                      headers={"User-Agent": "WavequenDownloader"}) as resp:
+        resp.raise_for_status()
+        total = int(resp.headers.get("Content-Length") or 0)
+        if total:
+            log(f"Downloading ffmpeg ({total / 1024 / 1024:.0f} MB)...")
+        else:
+            log("Downloading ffmpeg...")
+        read = 0
+        with open(dest, "wb") as out:
+            for chunk in resp.iter_content(262144):
+                if not chunk:
+                    continue
+                out.write(chunk)
+                read += len(chunk)
+                if progress and total:
+                    progress(read * 100 / total)
+    # A captive portal or error page saved as .zip would fail later and more
+    # confusingly, so check the archive magic now.
+    with open(dest, "rb") as fh:
+        if fh.read(2) != b"PK":
+            log("That mirror returned something that is not a zip archive.")
+            return False
+    return True
+
+
+def _unpack(tmp_zip: str, target: str, log=print) -> str | None:
+    """Extract the archive and move its bin/ directory into place."""
     staging = target + ".new"
     shutil.rmtree(staging, ignore_errors=True)
     try:
@@ -164,32 +222,122 @@ def install_ffmpeg_windows(progress=None, log=print) -> str | None:
     except (zipfile.BadZipFile, OSError) as exc:
         log(f"The downloaded archive is unusable: {exc}")
         shutil.rmtree(staging, ignore_errors=True)
-        _quiet_remove(tmp_zip)
         return None
-    finally:
-        _quiet_remove(tmp_zip)
 
-    # The archive holds one top-level ffmpeg-*-essentials_build folder.
     exe = None
     for root, _dirs, files in os.walk(staging):
-        if "ffmpeg.exe" in files:
-            exe = os.path.join(root, "ffmpeg.exe")
+        if "ffmpeg.exe" in files or "ffmpeg" in files:
+            exe = root
             break
     if not exe:
-        log("ffmpeg.exe was not found inside the archive.")
+        log("ffmpeg was not found inside the archive.")
         shutil.rmtree(staging, ignore_errors=True)
         return None
 
-    bin_dir = os.path.dirname(exe)
     final_bin = os.path.join(target, "bin")
     shutil.rmtree(target, ignore_errors=True)
     os.makedirs(final_bin, exist_ok=True)
-    for name in os.listdir(bin_dir):
-        shutil.move(os.path.join(bin_dir, name), os.path.join(final_bin, name))
+    # Shared builds keep their DLLs beside the exe, so take the whole folder.
+    for name in os.listdir(exe):
+        shutil.move(os.path.join(exe, name), os.path.join(final_bin, name))
     shutil.rmtree(staging, ignore_errors=True)
-
-    log(f"ffmpeg installed to {final_bin}")
     return final_bin
+
+
+def install_ffmpeg_via_winget(log=print, locate=None) -> str | None:
+    """Last resort. winget uses the OS TLS stack and verifies package hashes."""
+    if sys.platform != "win32" or not shutil.which("winget"):
+        return None
+    log("Trying winget...")
+    cmd = ["winget", "install", "--id", "Gyan.FFmpeg", "-e", "--source", "winget",
+           "--accept-package-agreements", "--accept-source-agreements",
+           "--disable-interactivity"]
+    try:
+        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=1200,
+                              **_no_window())
+    except (OSError, subprocess.SubprocessError) as exc:
+        log(f"winget could not run: {exc}")
+        return None
+    if proc.returncode != 0:
+        detail = (proc.stdout or proc.stderr or "").strip().splitlines()
+        log("winget failed: " + (detail[-1] if detail else f"exit {proc.returncode}"))
+        return None
+    log("winget finished. Looking for the installed ffmpeg...")
+    found = locate() if locate else None
+    if found and verify_ffmpeg(found, log=log):
+        return found
+    log("winget installed ffmpeg but it could not be located. A restart may help.")
+    return None
+
+
+def install_ffmpeg_windows(progress=None, log=print, locate=None) -> str | None:
+    """Install ffmpeg into our data dir, trying each mirror then winget.
+
+    `locate` is core.find_ffmpeg_dir, passed in so this module stays importable
+    before the third-party dependencies exist.
+    """
+    if sys.platform != "win32":
+        log("Automatic ffmpeg install is Windows only.\n" + manual_ffmpeg_hint())
+        return None
+
+    import tempfile
+
+    target = ffmpeg_target_dir()
+    tmp_zip = os.path.join(tempfile.gettempdir(), "wavequen-ffmpeg.zip")
+
+    for name, url in FFMPEG_MIRRORS:
+        log(f"Source: {name}")
+        try:
+            if progress:
+                progress(0)
+            resolved = url
+            if url.endswith("/releases/latest"):
+                resolved = _resolve_github_latest(url, log=log)
+                if not resolved:
+                    log("No usable archive on that mirror.")
+                    continue
+            if not _download(resolved, tmp_zip, progress=progress, log=log):
+                continue
+            log("Extracting...")
+            final_bin = _unpack(tmp_zip, target, log=log)
+            if not final_bin:
+                continue
+            if not verify_ffmpeg(final_bin, log=log):
+                continue
+            log(f"ffmpeg installed to {final_bin}")
+            return final_bin
+        except Exception as exc:  # noqa: BLE001 - network, TLS, disk all possible
+            log(f"{name} failed: {_explain(exc)}")
+            continue
+        finally:
+            _quiet_remove(tmp_zip)
+
+    installed = install_ffmpeg_via_winget(log=log, locate=locate)
+    if installed:
+        return installed
+
+    log("Every automatic method failed.\n" + manual_ffmpeg_hint())
+    return None
+
+
+def _explain(exc: Exception) -> str:
+    """Plain-language reason, so the log says what to do about it."""
+    text = str(exc)
+    low = text.lower()
+    if "certificate" in low and ("expired" in low or "verify failed" in low):
+        return ("the HTTPS certificate could not be verified. Your Windows root "
+                "certificates are probably out of date - install Windows Updates.")
+    if "503" in text or "502" in text or "504" in text:
+        return "that mirror is temporarily down (server error)."
+    if "timed out" in low or "timeout" in low:
+        return "the connection timed out."
+    if "name or service not known" in low or "getaddrinfo" in low or "nodename" in low:
+        return "DNS lookup failed - check your internet connection."
+    if "no space left" in low or "errno 28" in low:
+        return "the disk is full."
+    if "permission denied" in low or "errno 13" in low or "winerror 5" in low:
+        return "access denied writing to the install folder."
+    return text[:200]
 
 
 def _quiet_remove(path: str) -> None:

@@ -188,12 +188,20 @@ def test_ydl_options():
                                 "S", tags={"title": "X", "artist": ""})
     assert blank["postprocessor_args"]["metadata"] == ["-metadata", "title=X"]
 
-    # Original does not re-encode at all.
+    # Original must need no ffmpeg AT ALL, including with the default
+    # settings, where metadata and thumbnail embedding are both switched on.
+    # FFmpegMetadata shells out to ffmpeg just like the audio conversion does,
+    # so leaving it in made "Original" fail on machines without ffmpeg.
     original = core.build_ydl_opts(
+        out, core.DownloadOptions(audio_format="original"), clients, "S")
+    assert not original.get("postprocessors"), original.get("postprocessors")
+    assert not original.get("writethumbnail")
+
+    explicit_off = core.build_ydl_opts(
         out, core.DownloadOptions(audio_format="original", embed_thumbnail=False,
                                   embed_metadata=False),
         clients, "S")
-    assert "postprocessors" not in original
+    assert "postprocessors" not in explicit_off
 
     # Cookies only appear when a browser was chosen.
     assert "cookiesfrombrowser" not in mp3
@@ -267,6 +275,29 @@ def test_bad_input_rejected():
         except core.SourceError:
             continue
         raise AssertionError(f"should have been rejected: {bad!r}")
+
+
+def test_ffmpeg_mirrors_are_sane():
+    """More than one mirror, and none of them plain HTTP."""
+    import bootstrap
+    assert len(bootstrap.FFMPEG_MIRRORS) >= 2, "a single mirror is a single point of failure"
+    for name, url in bootstrap.FFMPEG_MIRRORS:
+        assert url.startswith("https://"), f"{name} is not HTTPS: {url}"
+        assert name
+
+
+def test_original_format_needs_no_ffmpeg():
+    """Regression: FFmpegMetadata used to be added even for Original.
+
+    It shells out to ffmpeg, so selecting Original on a machine without
+    ffmpeg failed, despite the format being advertised as not needing it.
+    """
+    opts = core.build_ydl_opts(
+        tempfile.gettempdir(),
+        core.DownloadOptions(audio_format="original"),  # defaults: tags + art ON
+        core.YT_CLIENT_SETS[0], "Song")
+    assert not opts.get("postprocessors")
+    assert not opts.get("writethumbnail")
 
 
 def main() -> int:

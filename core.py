@@ -25,7 +25,7 @@ from yt_dlp.utils import sanitize_filename
 
 APP_NAME = "Wavequen Downloader"
 APP_SLUG = "WavequenDownloader"
-APP_VERSION = "1.0.0"
+APP_VERSION = "1.0.1"
 
 UA = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -820,7 +820,8 @@ FORMAT_HINT = {
     "flac": "Lossless at roughly 60% of WAV size. Best archive choice.",
     "wav": "Uncompressed PCM. Huge files, no tags. For DJ software.",
     "alac": "Apple Lossless. Same idea as FLAC, for the Apple ecosystem.",
-    "original": "Whatever the site serves, untouched. Fastest, needs no ffmpeg.",
+    "original": ("Raw stream, untouched. Fastest and needs no ffmpeg, "
+                 "but gets no tags and no cover art."),
 }
 
 LOSSY_BITRATES = ["320", "256", "192", "160", "128", "96"]
@@ -891,8 +892,10 @@ def build_ydl_opts(out_dir: str, options: DownloadOptions, clients: list[str],
         if codec == "wav":
             pp_args["extractaudio"] = ["-acodec", "pcm_s16le", "-ar", "44100", "-ac", "2"]
 
+    # "original" promises a download that needs no ffmpeg, so it must not add
+    # postprocessors - FFmpegMetadata shells out to ffmpeg like any other.
     # WAV carries no tag container, and Vorbis thumbnails are not supported.
-    if options.embed_metadata and codec != "wav":
+    if options.embed_metadata and codec not in ("", "wav"):
         postprocessors.append({"key": "FFmpegMetadata", "add_metadata": True})
         # Prefer the tags the music service gave us over the YouTube video
         # title, so the library shows "One More Time" and not

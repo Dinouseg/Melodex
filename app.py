@@ -665,6 +665,7 @@ class App:
         path = bootstrap.install_ffmpeg_windows(
             progress=lambda pct: self.ui(self.set_progress, pct),
             log=lambda message: self.ui(self.log_line, message, "muted"),
+            locate=core.find_ffmpeg_dir,
         )
         self.ffmpeg_dir = path or core.find_ffmpeg_dir()
         if self.ffmpeg_dir:

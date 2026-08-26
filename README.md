@@ -89,9 +89,10 @@ and `mutagen` (mutagen is what writes cover art into FLAC, M4A and Opus).
 
 ffmpeg does the audio conversion. Every format except **Original** needs it.
 
-- **Windows:** the app downloads a static build (about 40 MB) into its own data
-  folder when you click Install. Nothing else on the system is touched. If you
-  prefer: `winget install Gyan.FFmpeg`
+- **Windows:** click **Install** in the app. It downloads a build into its own
+  data folder and touches nothing else. Several mirrors are tried in turn, and
+  if all of them fail it falls back to `winget`. If you would rather do it
+  yourself: `winget install Gyan.FFmpeg`
 - **macOS:** `brew install ffmpeg`
 - **Linux:** `sudo apt install ffmpeg` / `sudo dnf install ffmpeg` /
   `sudo pacman -S ffmpeg`
@@ -111,7 +112,7 @@ An ffmpeg already on your `PATH` is found and used automatically.
 | FLAC | yes | Roughly 60% of WAV size. Best archive choice. |
 | WAV | yes | Uncompressed PCM 16-bit / 44.1 kHz. No tags. For DJ software. |
 | ALAC | yes | Apple Lossless. FLAC for the Apple ecosystem. |
-| Original | n/a | Whatever the site serves, untouched. Fastest, needs no ffmpeg. |
+| Original | n/a | Whatever the site serves, untouched. Fastest and needs no ffmpeg, but gets no tags and no cover art. |
 
 Bitrate applies to the lossy formats only, and is greyed out otherwise.
 
@@ -157,6 +158,16 @@ available.
 source to report a duration. If it does not, paste the YouTube link directly.
 
 **ffmpeg errors.** Settings, then ffmpeg setup, and reinstall it.
+
+**ffmpeg install fails with "certificate has expired".** Your Windows root
+certificate store is out of date, which makes the download reject a perfectly
+valid certificate. Version 1.0.1 works around this by validating against its
+own bundled certificate list, so update the app. Installing pending Windows
+Updates fixes the underlying cause.
+
+**ffmpeg install fails on every mirror.** Run `winget install Gyan.FFmpeg` in a
+terminal, then restart the app. It picks up any ffmpeg already on your `PATH`.
+Until then, switch the format to **Original**, which needs no ffmpeg at all.
 
 ---
 
