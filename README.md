@@ -66,8 +66,8 @@ on trust, do not: the full source is in this repository, and running
 ### Option 2: from source (any OS)
 
 ```bash
-git clone https://github.com/Dinouseg/Wavequeen-Downloader.git
-cd Wavequeen-Downloader
+git clone https://github.com/Dinouseg/Wavequen-Downloader.git
+cd Wavequen-Downloader
 python app.py
 ```
 
