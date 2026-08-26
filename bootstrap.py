@@ -54,7 +54,7 @@ def check_python() -> None:
         have = ".".join(str(n) for n in sys.version_info[:3])
         need = ".".join(str(n) for n in MIN_PYTHON)
         raise SystemExit(
-            f"Wavequen Downloader needs Python {need} or newer, but this is {have}.\n"
+            f"Melodex needs Python {need} or newer, but this is {have}.\n"
             "Download a current version from https://www.python.org/downloads/"
         )
 
@@ -122,7 +122,7 @@ def ffmpeg_target_dir() -> str:
         base = os.environ.get("XDG_CONFIG_HOME") or os.path.join(
             os.path.expanduser("~"), ".config"
         )
-    return os.path.join(base, "WavequenDownloader", "ffmpeg")
+    return os.path.join(base, "Melodex", "ffmpeg")
 
 
 def manual_ffmpeg_hint() -> str:
@@ -187,7 +187,7 @@ def _download(url: str, dest: str, progress=None, log=print) -> bool:
     """
     import requests
     with requests.get(url, stream=True, timeout=60,
-                      headers={"User-Agent": "WavequenDownloader"}) as resp:
+                      headers={"User-Agent": "Melodex"}) as resp:
         resp.raise_for_status()
         total = int(resp.headers.get("Content-Length") or 0)
         if total:
@@ -283,7 +283,7 @@ def install_ffmpeg_windows(progress=None, log=print, locate=None) -> str | None:
     import tempfile
 
     target = ffmpeg_target_dir()
-    tmp_zip = os.path.join(tempfile.gettempdir(), "wavequen-ffmpeg.zip")
+    tmp_zip = os.path.join(tempfile.gettempdir(), "melodex-ffmpeg.zip")
 
     for name, url in FFMPEG_MIRRORS:
         log(f"Source: {name}")

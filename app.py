@@ -1,8 +1,8 @@
-"""Wavequen Downloader - desktop music downloader.
+"""Melodex - desktop music downloader.
 
 Paste a link from Tidal, Spotify, Deezer, YouTube Music, SoundCloud, Bandcamp
 or any other site yt-dlp supports, pick a folder and an audio format, and the
-tracks land on disk tagged and ready for Wavequen.
+tracks land on disk tagged and ready to play.
 
 Run from source:   python app.py
 """
@@ -397,7 +397,7 @@ class App:
         ttk.Label(titles, text=core.APP_NAME, style="Title.TLabel").pack(anchor="w")
         ttk.Label(
             titles,
-            text="Fetch music for Wavequen from Tidal, Spotify, Deezer, YouTube "
+            text="Fetch music from Tidal, Spotify, Deezer, YouTube "
                  "Music, SoundCloud, Bandcamp and more",
             style="Sub.TLabel",
         ).pack(anchor="w", pady=(2, 0))
@@ -723,7 +723,7 @@ class App:
             return
         try:
             os.makedirs(out_dir, exist_ok=True)
-            probe = os.path.join(out_dir, ".wavequen-write-test")
+            probe = os.path.join(out_dir, ".melodex-write-test")
             with open(probe, "w", encoding="utf-8"):
                 pass
             os.remove(probe)

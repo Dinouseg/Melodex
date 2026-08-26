@@ -1,8 +1,7 @@
-# Wavequen Downloader
+# Melodex
 
-Desktop music downloader and the companion app to the **Wavequen** music
-player. Paste a link, pick a folder and a format, and the tracks land on disk
-tagged, cover art included, ready to play.
+Desktop app for building a music library. Paste a link, pick a folder and a
+format, and the tracks land on disk tagged, cover art included, ready to play.
 
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
@@ -23,8 +22,8 @@ tagged, cover art included, ready to play.
   player clients, so one client answering HTTP 403, "sign in to confirm" or
   "requested format is not available" no longer kills the download. Stalled
   streams are detected and re-fetched instead of hanging.
-- **Tags and cover art** written into the file, so Wavequen has something to
-  show.
+- **Tags and cover art** written into the file, so your player has something
+  to show.
 - **Parallel downloads** with a live progress bar, a stop button, and a skip
   for tracks already in the folder.
 - **Nothing hardcoded.** Destination folder, format, bitrate and every other
@@ -41,33 +40,58 @@ you get the song rather than a one-hour mix that happens to share its name.
 ### Option 1: the executable (Windows)
 
 1. Open the [Releases](../../releases) page.
-2. Download **`WavequenDownloader.exe`** from the newest release.
+2. Download **`Melodex.exe`** from the newest release.
 3. Double-click it. No Python, no installer, no setup.
 4. On first launch it offers to download ffmpeg. Say yes, or the only format
    that will work is **Original**.
 
 #### Windows will warn you the first time
 
-Windows shows **"Windows protected your PC"** (SmartScreen) when it sees an
-executable that few people have downloaded yet. That is expected here: the file
-is unsigned, because a code-signing certificate costs a few hundred euros a
-year and this is a free hobby project. SmartScreen judges reputation, not
-safety, so a brand new release always trips it.
+Two different warnings can appear. Both are expected, and neither means the
+file is infected.
 
-To run it anyway: click **More info**, then **Run anyway**.
+**"Windows protected your PC" (SmartScreen).** Click **More info**, then
+**Run anyway**. SmartScreen measures how many people have downloaded a file,
+not whether it is safe, so every fresh release of a small project trips it.
 
-Your antivirus may also flag it. This is a known false positive with anything
-built by PyInstaller, which bundles a Python interpreter into a single .exe -
-the same packaging pattern some malware uses, so the heuristics fire on the
-packer rather than on anything the app does. If you would rather not take that
-on trust, do not: the full source is in this repository, and running
-`python app.py` skips the packaged executable entirely.
+**Windows Defender reports a threat after downloading.** This is a false
+positive, and a well documented one. Melodex is built with PyInstaller, which
+packs a Python interpreter and the whole app into a single .exe that unpacks
+itself into a temporary folder when it starts. That is also what a lot of real
+malware does, so the heuristics score the packaging rather than anything the
+program actually does. The detection name is usually something generic like
+`Wacatac`, `Wacapew` or `Sabsik` - those are heuristic buckets, not identified
+malware families.
+
+Contributing factors, none of which are fixable for free: the file is unsigned,
+because a code-signing certificate costs several hundred euros a year, and a
+brand new release has no download reputation yet.
+
+If Defender blocks it and you want to run it anyway:
+
+1. Open **Windows Security** and go to **Protection history**.
+2. Find the blocked item, choose **Allow on device**, then download it again.
+
+**If you would rather not trust it, don't.** That is a reasonable position for
+any unsigned executable from the internet. The complete source is in this
+repository, it is short enough to read, and running it from source skips the
+packaged executable entirely:
+
+```bash
+pip install -r requirements.txt
+python app.py
+```
+
+You can also check the file yourself on [VirusTotal](https://www.virustotal.com)
+before running it. Expect a handful of heuristic engines to flag it while the
+majority report it clean; that pattern is the signature of a packer false
+positive rather than of actual malware.
 
 ### Option 2: from source (any OS)
 
 ```bash
-git clone https://github.com/Dinouseg/Wavequen-Downloader.git
-cd Wavequen-Downloader
+git clone https://github.com/Dinouseg/Melodex.git
+cd Melodex
 python app.py
 ```
 
@@ -133,9 +157,9 @@ Behind the **Settings** button:
 
 Settings live in:
 
-- Windows: `%LOCALAPPDATA%\WavequenDownloader\config.json`
-- macOS: `~/Library/Application Support/WavequenDownloader/config.json`
-- Linux: `~/.config/WavequenDownloader/config.json`
+- Windows: `%LOCALAPPDATA%\Melodex\config.json`
+- macOS: `~/Library/Application Support/Melodex/config.json`
+- Linux: `~/.config/Melodex/config.json`
 
 ---
 
@@ -161,7 +185,7 @@ source to report a duration. If it does not, paste the YouTube link directly.
 
 **ffmpeg install fails with "certificate has expired".** Your Windows root
 certificate store is out of date, which makes the download reject a perfectly
-valid certificate. Version 1.0.1 works around this by validating against its
+valid certificate. Version 1.0.1 and later work around this by validating against its
 own bundled certificate list, so update the app. Installing pending Windows
 Updates fixes the underlying cause.
 

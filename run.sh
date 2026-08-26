@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
-# Start Wavequen Downloader from source.
+# Start Melodex from source.
 cd "$(dirname "$0")"
 exec python3 app.py "$@"

@@ -1,4 +1,4 @@
-"""Core logic for Wavequen Downloader.
+"""Core logic for Melodex.
 
 Everything that is not GUI lives here: link parsing for the supported music
 services, YouTube resolution, the yt-dlp download pipeline with client
@@ -23,9 +23,9 @@ from urllib3.util.retry import Retry
 import yt_dlp
 from yt_dlp.utils import sanitize_filename
 
-APP_NAME = "Wavequen Downloader"
-APP_SLUG = "WavequenDownloader"
-APP_VERSION = "1.0.1"
+APP_NAME = "Melodex"
+APP_SLUG = "Melodex"
+APP_VERSION = "1.0.2"
 
 UA = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
