@@ -175,6 +175,12 @@ live. You are responsible for how you use it.
 
 ---
 
+## Usage of AI
+
+The entire code was written using Claude Code (Opus 5) and then debugged by hand; minor and minor fixes were made by hand. Expect some errors.
+
+---
+
 ## License
 
 MIT. See [LICENSE](LICENSE).
