@@ -1,4 +1,4 @@
-"""Core logic for WaveQueen Downloader.
+"""Core logic for Wavequen Downloader.
 
 Everything that is not GUI lives here: link parsing for the supported music
 services, YouTube resolution, the yt-dlp download pipeline with client
@@ -23,9 +23,9 @@ from urllib3.util.retry import Retry
 import yt_dlp
 from yt_dlp.utils import sanitize_filename
 
-APP_NAME = "WaveQueen Downloader"
-APP_SLUG = "WaveQueenDownloader"
-APP_VERSION = "2.0.0"
+APP_NAME = "Wavequen Downloader"
+APP_SLUG = "WavequenDownloader"
+APP_VERSION = "1.0.0"
 
 UA = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "

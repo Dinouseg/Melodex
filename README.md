@@ -1,6 +1,6 @@
-# WaveQueen Downloader
+# Wavequen Downloader
 
-Desktop music downloader and the companion app to the **WaveQueen** music
+Desktop music downloader and the companion app to the **Wavequen** music
 player. Paste a link, pick a folder and a format, and the tracks land on disk
 tagged, cover art included, ready to play.
 
@@ -23,7 +23,7 @@ tagged, cover art included, ready to play.
   player clients, so one client answering HTTP 403, "sign in to confirm" or
   "requested format is not available" no longer kills the download. Stalled
   streams are detected and re-fetched instead of hanging.
-- **Tags and cover art** written into the file, so WaveQueen has something to
+- **Tags and cover art** written into the file, so Wavequen has something to
   show.
 - **Parallel downloads** with a live progress bar, a stop button, and a skip
   for tracks already in the folder.
@@ -40,9 +40,28 @@ you get the song rather than a one-hour mix that happens to share its name.
 
 ### Option 1: the executable (Windows)
 
-Grab `WaveQueenDownloader.exe` from the
-[Releases](../../releases) page and run it. No Python needed. On first launch it
-offers to download ffmpeg for you.
+1. Open the [Releases](../../releases) page.
+2. Download **`WavequenDownloader.exe`** from the newest release.
+3. Double-click it. No Python, no installer, no setup.
+4. On first launch it offers to download ffmpeg. Say yes, or the only format
+   that will work is **Original**.
+
+#### Windows will warn you the first time
+
+Windows shows **"Windows protected your PC"** (SmartScreen) when it sees an
+executable that few people have downloaded yet. That is expected here: the file
+is unsigned, because a code-signing certificate costs a few hundred euros a
+year and this is a free hobby project. SmartScreen judges reputation, not
+safety, so a brand new release always trips it.
+
+To run it anyway: click **More info**, then **Run anyway**.
+
+Your antivirus may also flag it. This is a known false positive with anything
+built by PyInstaller, which bundles a Python interpreter into a single .exe -
+the same packaging pattern some malware uses, so the heuristics fire on the
+packer rather than on anything the app does. If you would rather not take that
+on trust, do not: the full source is in this repository, and running
+`python app.py` skips the packaged executable entirely.
 
 ### Option 2: from source (any OS)
 
@@ -113,9 +132,9 @@ Behind the **Settings** button:
 
 Settings live in:
 
-- Windows: `%LOCALAPPDATA%\WaveQueenDownloader\config.json`
-- macOS: `~/Library/Application Support/WaveQueenDownloader/config.json`
-- Linux: `~/.config/WaveQueenDownloader/config.json`
+- Windows: `%LOCALAPPDATA%\WavequenDownloader\config.json`
+- macOS: `~/Library/Application Support/WavequenDownloader/config.json`
+- Linux: `~/.config/WavequenDownloader/config.json`
 
 ---
 

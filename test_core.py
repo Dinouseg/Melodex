@@ -4,6 +4,7 @@ No network, no ffmpeg, no GUI. Run with:  python test_core.py
 """
 
 import os
+import re
 import sys
 import tempfile
 
@@ -231,6 +232,25 @@ def test_existing_file(tmp=None):
         # An unpredictable name cannot be checked.
         assert core.existing_file(folder, None, "mp3") is None
         assert core.existing_file(folder, "Song", "original") is None
+
+
+def test_bootstrap_and_core_agree_on_ffmpeg_dir():
+    """bootstrap installs ffmpeg where core looks for it.
+
+    The app slug is spelled out in both files (bootstrap cannot import core,
+    it runs before the dependencies exist), so a rename can silently split
+    them and leave ffmpeg installed somewhere the app never checks.
+    """
+    import bootstrap
+    installs_to = os.path.join(bootstrap.ffmpeg_target_dir(), "bin")
+    core_looks_in = os.path.join(core.data_dir(), "ffmpeg", "bin")
+    assert os.path.normcase(installs_to) == os.path.normcase(core_looks_in), (
+        f"bootstrap installs ffmpeg to {installs_to} "
+        f"but core searches {core_looks_in}")
+
+
+def test_version_is_set():
+    assert re.fullmatch(r"\d+\.\d+\.\d+", core.APP_VERSION), core.APP_VERSION
 
 
 def test_config_roundtrip():

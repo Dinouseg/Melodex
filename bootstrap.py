@@ -39,7 +39,7 @@ def check_python() -> None:
         have = ".".join(str(n) for n in sys.version_info[:3])
         need = ".".join(str(n) for n in MIN_PYTHON)
         raise SystemExit(
-            f"WaveQueen Downloader needs Python {need} or newer, but this is {have}.\n"
+            f"Wavequen Downloader needs Python {need} or newer, but this is {have}.\n"
             "Download a current version from https://www.python.org/downloads/"
         )
 
@@ -107,7 +107,7 @@ def ffmpeg_target_dir() -> str:
         base = os.environ.get("XDG_CONFIG_HOME") or os.path.join(
             os.path.expanduser("~"), ".config"
         )
-    return os.path.join(base, "WaveQueenDownloader", "ffmpeg")
+    return os.path.join(base, "WavequenDownloader", "ffmpeg")
 
 
 def manual_ffmpeg_hint() -> str:
@@ -131,12 +131,12 @@ def install_ffmpeg_windows(progress=None, log=print) -> str | None:
     import urllib.request
 
     target = ffmpeg_target_dir()
-    tmp_zip = os.path.join(tempfile.gettempdir(), "wavequeen-ffmpeg.zip")
+    tmp_zip = os.path.join(tempfile.gettempdir(), "wavequen-ffmpeg.zip")
 
     log("Downloading ffmpeg (about 40 MB)...")
     try:
         request = urllib.request.Request(
-            FFMPEG_WINDOWS_URL, headers={"User-Agent": "WaveQueenDownloader"}
+            FFMPEG_WINDOWS_URL, headers={"User-Agent": "WavequenDownloader"}
         )
         with urllib.request.urlopen(request, timeout=60) as response:
             total = int(response.headers.get("Content-Length") or 0)

@@ -1,4 +1,4 @@
-"""Build the standalone WaveQueen Downloader executable.
+"""Build the standalone Wavequen Downloader executable.
 
     python build.py            build a one-file executable
     python build.py --clean    wipe build/ and dist/ first
@@ -17,7 +17,7 @@ import subprocess
 import sys
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
-NAME = "WaveQueenDownloader"
+NAME = "WavequenDownloader"
 
 
 def run(cmd: list[str]) -> None:
@@ -39,7 +39,7 @@ def ensure_tooling() -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Build the WaveQueen Downloader executable.")
+    parser = argparse.ArgumentParser(description="Build the Wavequen Downloader executable.")
     parser.add_argument("--clean", action="store_true", help="remove build/ and dist/ first")
     parser.add_argument("--onedir", action="store_true",
                         help="build a folder instead of a single file")
